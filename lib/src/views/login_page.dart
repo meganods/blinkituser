@@ -1,6 +1,8 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'address_page.dart';
 import '../widgets/kb_logo.dart';
 
@@ -34,6 +36,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final FocusNode _emailFocus = FocusNode();
 
   bool _isLoginMode = true;
+  bool _obscurePassword = true;
 
   static const Color _primaryBlue = Color(0xFF39D2FF);
   static const Color _primaryMagenta = Color(0xFFE57CFF);
@@ -77,7 +80,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     return Color.fromRGBO(color.red, color.green, color.blue, opacity);
   }
 
-  InputDecoration _buildInputDecoration(String label, Color accent) {
+  InputDecoration _buildInputDecoration(String label, Color accent, {Widget? suffixIcon}) {
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(color: _fade(accent, 0.92)),
@@ -92,6 +95,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       filled: true,
       fillColor: _fade(Colors.white, 0.03),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      suffixIcon: suffixIcon,
     );
   }
 
@@ -223,12 +227,26 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           TextField(
             controller: _passwordController,
             focusNode: _passwordFocus,
-            obscureText: true,
+            obscureText: _obscurePassword,
             cursorColor: _primaryMagenta,
             style: TextStyle(
               color: widget.isDarkMode ? Colors.white : Colors.black,
             ),
-            decoration: _buildInputDecoration('Password', _primaryMagenta),
+            decoration: _buildInputDecoration(
+              'Password', 
+              _primaryMagenta,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: _fade(_primaryMagenta, 0.7),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              ),
+            ),
           ),
           const SizedBox(height: 28),
           SizedBox(
@@ -319,7 +337,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     final password = _passwordController.text.trim();
 
     if (email == 'user@gmail.com' && password == 'user123') {
-      Navigator.push(
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setBool('isMockLoggedIn', true);
+      });
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => AddressPage(
@@ -353,11 +374,61 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
-  void _handleGoogleSignIn() {
+  Future<void> _handleGoogleSignIn() async {
     FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Google sign-in pressed (placeholder action)')),
-    );
+    
+    try {
+      // Trigger the authentication flow using the new instance pattern
+      final GoogleSignInAccount? googleUser = await GoogleSignIn.instance.authenticate();
+      
+      if (googleUser == null) {
+        // The user canceled the sign-in
+        return;
+      }
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // Create a new credential
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.idToken, // Using idToken as a fallback if accessToken is missing
+        idToken: googleAuth.idToken,
+      );
+
+      // Once signed in, return the UserCredential
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddressPage(
+              onThemeToggle: widget.onThemeToggle,
+              isDarkMode: widget.isDarkMode,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(child: Text('Google Sign-In Error: $e')),
+            ],
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(20),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
   }
 }
 

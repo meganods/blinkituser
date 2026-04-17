@@ -11,6 +11,12 @@ dependencies:
   geolocator: ^10.0.0
   google_maps_flutter: ^2.17.0
   google_maps_flutter_web: ^0.6.2
+  firebase_core: ^4.7.0
+  firebase_analytics: ^12.3.0
+  flutter_dotenv: ^5.1.0
+  firebase_auth: ^6.4.0
+  google_sign_in: ^7.2.0
+  shared_preferences: ^2.5.5
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -18,5 +24,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - .env
     - assets/images/download.jpg
     - assets/images/Grau.jpg

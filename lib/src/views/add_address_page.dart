@@ -11,6 +11,7 @@ class AddAddressPage extends StatefulWidget {
 }
 
 class _AddAddressPageState extends State<AddAddressPage> {
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
   GoogleMapController? _mapController;
   LatLng _currentPosition = const LatLng(28.6139, 77.2090); // Default: Delhi
   String _selectedTag = 'Home';
@@ -67,7 +68,6 @@ class _AddAddressPageState extends State<AddAddressPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = widget.isDarkMode;
     final Size size = MediaQuery.of(context).size;
     final bool isWide = size.width > 900;
 
@@ -157,7 +157,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             height: 50,
             decoration: BoxDecoration(
-              color: widget.isDarkMode ? const Color(0xFF1F202D) : Colors.white,
+              color: isDark ? const Color(0xFF1F202D) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -169,7 +169,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
             ),
             child: Row(
               children: [
-                Icon(Icons.search, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                Icon(Icons.search, color: isDark ? Colors.white70 : Colors.black54),
                 const SizedBox(width: 12),
                 const Expanded(
                   child: TextField(
@@ -220,7 +220,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: widget.isDarkMode ? const Color(0xFF1F202D) : Colors.white.withOpacity(0.9),
+              color: isDark ? const Color(0xFF1F202D) : Colors.white.withOpacity(0.9),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
             ),
@@ -241,7 +241,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
                           const Text('Gaur City 1', style: TextStyle(fontWeight: FontWeight.bold)),
                           Text(
                             'Sector 4, Greater Noida',
-                            style: TextStyle(fontSize: 12, color: widget.isDarkMode ? Colors.white54 : Colors.black54),
+                            style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54),
                           ),
                         ],
                       ),
@@ -344,7 +344,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
           ),
           child: TextField(
             controller: controller,
-            style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black, fontSize: 14),
+            style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 14),
             decoration: InputDecoration(
               labelText: label,
               labelStyle: const TextStyle(color: Colors.grey, fontSize: 13),

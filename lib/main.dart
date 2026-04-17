@@ -1,8 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'src/views/login_page.dart';
+import 'src/views/address_page.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load .env file
+  await dotenv.load(fileName: ".env");
+  
+  await Firebase.initializeApp(
+    options: FirebaseOptions(
+      apiKey: dotenv.env['FIREBASE_API_KEY'] ?? '',
+      authDomain: dotenv.env['FIREBASE_AUTH_DOMAIN'] ?? '',
+      projectId: dotenv.env['FIREBASE_PROJECT_ID'] ?? '',
+      storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'] ?? '',
+      messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '',
+      appId: dotenv.env['FIREBASE_APP_ID'] ?? '',
+      measurementId: dotenv.env['FIREBASE_MEASUREMENT_ID'] ?? '',
+    ),
+  );
+
+  // Initialize Google Sign-In for modern authentication (version 7.0.0+)
+  await GoogleSignIn.instance.initialize();
+  
   runApp(const BlinkiteApp());
 }
 
@@ -14,7 +39,7 @@ class BlinkiteApp extends StatefulWidget {
 }
 
 class _BlinkiteAppState extends State<BlinkiteApp> {
-  bool _isDarkMode = true;
+  bool _isDarkMode = false;
 
   void _toggleTheme() {
     setState(() {
@@ -46,7 +71,38 @@ class _BlinkiteAppState extends State<BlinkiteApp> {
                 brightness: Brightness.light,
               ),
             ),
-      home: LoginPage(onThemeToggle: _toggleTheme, isDarkMode: _isDarkMode),
+      home: FutureBuilder<bool>(
+        future: _checkMockLogin(),
+        builder: (context, mockSnapshot) {
+          if (mockSnapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+          
+          if (mockSnapshot.data == true) {
+            return AddressPage(onThemeToggle: _toggleTheme, isDarkMode: _isDarkMode);
+          }
+
+          return StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, firebaseSnapshot) {
+              if (firebaseSnapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              }
+              
+              if (firebaseSnapshot.hasData) {
+                return AddressPage(onThemeToggle: _toggleTheme, isDarkMode: _isDarkMode);
+              }
+
+              return LoginPage(onThemeToggle: _toggleTheme, isDarkMode: _isDarkMode);
+            },
+          );
+        },
+      ),
     );
+  }
+
+  Future<bool> _checkMockLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('isMockLoggedIn') ?? false;
   }
 }

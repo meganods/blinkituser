@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:math' as math;
 
 class PaymentPage extends StatefulWidget {
   final bool isDarkMode;
@@ -7,13 +9,21 @@ class PaymentPage extends StatefulWidget {
   final double totalAmount;
   final List<Map<String, dynamic>> cartItems;
 
+  final String userName;
+  final String userId;
+
+  final VoidCallback onThemeToggle;
+
   const PaymentPage({
     super.key,
     required this.isDarkMode,
+    required this.onThemeToggle,
     required this.selectedAddress,
     required this.selectedAddressType,
     required this.totalAmount,
     required this.cartItems,
+    this.userName = 'User',
+    this.userId = 'USER123',
   });
 
   @override
@@ -21,14 +31,20 @@ class PaymentPage extends StatefulWidget {
 }
 
 class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStateMixin {
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   String? _expandedMethod; // 'card', 'upi', etc.
+  String? _selectedMode; // 'Online', 'Cash on Delivery', 'UPI'
+  String? _transactionId;
   bool _isQrGenerated = false;
+
+  late String _orderId;
 
   @override
   void initState() {
     super.initState();
+    _orderId = 'BK${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -45,7 +61,6 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = widget.isDarkMode;
     final Size size = MediaQuery.of(context).size;
     final bool isWide = size.width > 900;
 
@@ -66,6 +81,16 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+            onPressed: widget.onThemeToggle,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: FadeTransition(
         opacity: _fadeAnimation,
@@ -102,33 +127,58 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
   Widget _buildPaymentMethodsList() {
     return Container(
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? const Color(0xFF1F202D) : Colors.white,
+        color: isDark ? const Color(0xFF1F202D) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: widget.isDarkMode ? Colors.white10 : Colors.black12),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
       ),
       child: Column(
         children: [
-          _paymentTile('Wallets', Icons.wallet, 'wallets'),
+          _paymentTile('Online Payment', Icons.payment, 'online', subtitle: 'Pay via Card, Netbanking or Wallets'),
+          if (_expandedMethod == 'online') _buildOnlineOptions(),
           _divider(),
-          _paymentTile('Add credit or debit cards', Icons.credit_card, 'card'),
-          if (_expandedMethod == 'card') _buildCardForm(),
-          _divider(),
-          _paymentTile('Netbanking', Icons.account_balance, 'netbanking'),
-          _divider(),
-          _paymentTile('UPI', Icons.mobile_screen_share, 'upi'),
+          _paymentTile('UPI', Icons.mobile_screen_share, 'upi', subtitle: 'Pay using any UPI app'),
           if (_expandedMethod == 'upi') _buildUpiQr(),
           _divider(),
-          _paymentTile(
-            'Cash', 
-            Icons.money, 
-            'cash',
-            subtitle: 'Cash on delivery is not applicable on first order with item total less than ₹100',
-            isDisabled: widget.totalAmount < 100,
-          ),
-          _divider(),
-          _paymentTile('Pay Later', Icons.timer_outlined, 'paylater'),
+          if (widget.totalAmount >= 150) ...[
+            _paymentTile(
+              'Cash on Delivery', 
+              Icons.money, 
+              'cash',
+              subtitle: 'Pay when your order arrives',
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildOnlineOptions() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey.withOpacity(0.02),
+      child: Column(
+        children: [
+          _subPaymentTile('Credit / Debit Card', Icons.credit_card, 'card'),
+          _subPaymentTile('Netbanking', Icons.account_balance, 'netbanking'),
+          _subPaymentTile('Wallets', Icons.account_balance_wallet, 'wallets'),
+        ],
+      ),
+    );
+  }
+
+  Widget _subPaymentTile(String title, IconData icon, String mode) {
+    bool isSelected = _selectedMode == mode;
+    return ListTile(
+      dense: true,
+      leading: Icon(icon, size: 20, color: isSelected ? const Color(0xFF2D7A3E) : Colors.grey),
+      title: Text(title, style: TextStyle(fontSize: 14, color: isDark ? Colors.white : Colors.black, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+      trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF2D7A3E), size: 18) : null,
+      onTap: () {
+        setState(() {
+          _selectedMode = mode;
+          _transactionId = 'TXN${math.Random().nextInt(999999).toString().padLeft(6, '0')}';
+        });
+      },
     );
   }
 
@@ -136,13 +186,13 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
     final bool isExpanded = _expandedMethod == methodId;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      leading: Icon(icon, color: isDisabled ? Colors.grey : (widget.isDarkMode ? Colors.white70 : Colors.black87)),
+      leading: Icon(icon, color: isDisabled ? Colors.grey : (isDark ? Colors.white70 : Colors.black87)),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: isDisabled ? Colors.grey : (widget.isDarkMode ? Colors.white : Colors.black),
+          color: isDisabled ? Colors.grey : (isDark ? Colors.white : Colors.black),
         ),
       ),
       subtitle: subtitle != null ? Padding(
@@ -159,70 +209,22 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
       onTap: isDisabled ? null : () {
         setState(() {
           _expandedMethod = isExpanded ? null : methodId;
+          if (methodId == 'cash') {
+            _selectedMode = 'Cash on Delivery';
+            _transactionId = null;
+          } else if (methodId == 'upi') {
+            _selectedMode = 'UPI';
+            _transactionId = 'UPI${math.Random().nextInt(999999).toString().padLeft(6, '0')}';
+          }
         });
       },
-    );
-  }
-
-  Widget _buildCardForm() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      color: widget.isDarkMode ? Colors.white.withOpacity(0.02) : Colors.grey.withOpacity(0.02),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              _cardLogo('VISA'),
-              const SizedBox(width: 8),
-              _cardLogo('MasterCard'),
-              const SizedBox(width: 8),
-              _cardLogo('RuPay'),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _field('Name on Card'),
-          const SizedBox(height: 12),
-          _field('Card Number'),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _field('Expiry Date (MM/YY)')),
-              const SizedBox(width: 12),
-              Expanded(child: _field('CVV')),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _field('Nickname for card (Optional)'),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () => _navigateToThankYou(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2D7A3E),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: const Text('Checkout', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'We accept Credit and Debit Cards from Visa, Mastercard, Rupay, Pluxee, American Express & Diners.',
-            style: TextStyle(fontSize: 10, color: widget.isDarkMode ? Colors.white38 : Colors.grey),
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildUpiQr() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      color: widget.isDarkMode ? Colors.white.withOpacity(0.02) : Colors.grey.withOpacity(0.02),
+      color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey.withOpacity(0.02),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -279,10 +281,7 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
                 if (_isQrGenerated)
                   Positioned(
                     bottom: 10,
-                    child: TextButton(
-                      onPressed: () => _navigateToThankYou(),
-                      child: const Text('Done Payment?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
+                    child: Text('Payment Active', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
               ],
             ),
@@ -292,23 +291,11 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
     );
   }
 
-  Widget _cardLogo(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: widget.isDarkMode ? Colors.white10 : Colors.white,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-      ),
-      child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
-    );
-  }
-
   Widget _upiIcon(String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? Colors.white10 : Colors.white,
+        color: isDark ? Colors.white10 : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.withOpacity(0.2)),
       ),
@@ -316,58 +303,58 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
     );
   }
 
-  Widget _field(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withOpacity(0.3)),
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-          border: InputBorder.none,
-        ),
-      ),
-    );
-  }
-
   void _navigateToThankYou() {
-    final String orderId = 'BK${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => ThankYouPage(
-          isDarkMode: widget.isDarkMode,
-          orderId: orderId,
+          isDarkMode: isDark,
+          onThemeToggle: widget.onThemeToggle,
+          orderId: _orderId,
+          totalAmount: widget.totalAmount,
+          cartItems: widget.cartItems,
+          userName: widget.userName,
+          userId: widget.userId,
+          paymentMode: _selectedMode ?? 'Online',
+          transactionId: _transactionId,
+          status: _selectedMode == 'Cash on Delivery' ? 'Cash' : 'Online',
         ),
       ),
     );
   }
 
   Widget _divider() {
-    return Divider(height: 1, color: widget.isDarkMode ? Colors.white10 : Colors.black12, thickness: 1);
+    return Divider(height: 1, color: isDark ? Colors.white10 : Colors.black12, thickness: 1);
   }
 
   Widget _buildOrderSummary() {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? const Color(0xFF1F202D) : Colors.white,
+        color: isDark ? const Color(0xFF1F202D) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: widget.isDarkMode ? Colors.white10 : Colors.black12),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Order ID', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(_orderId, style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 12, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: Colors.white10),
+          const SizedBox(height: 12),
           const Text('Delivery Address', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(
             '${widget.selectedAddressType}: ${widget.selectedAddress}',
             style: TextStyle(
               fontSize: 13,
-              color: widget.isDarkMode ? Colors.white70 : Colors.black87,
+              color: isDark ? Colors.white70 : Colors.black87,
             ),
           ),
           const SizedBox(height: 24),
@@ -387,7 +374,7 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
                 Expanded(
                   child: Text(
                     item['name'],
-                    style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
+                    style: TextStyle(color: isDark ? Colors.white : Colors.black),
                   ),
                 ),
                 Text('₹${item['price']}', style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -399,14 +386,17 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: () => _navigateToThankYou(),
+              onPressed: _selectedMode != null ? () => _navigateToThankYou() : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2D7A3E),
+                backgroundColor: const Color(0xFF27C93F),
+                disabledBackgroundColor: Colors.grey.withOpacity(0.3),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
-                'Pay Now ₹${widget.totalAmount.toStringAsFixed(0)}',
+                _selectedMode == null 
+                  ? 'Select Payment Mode' 
+                  : 'Confirm Order (₹${widget.totalAmount.toStringAsFixed(0)})',
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
@@ -417,99 +407,325 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
   }
 }
 
-class ThankYouPage extends StatelessWidget {
+class ThankYouPage extends StatefulWidget {
   final bool isDarkMode;
   final String orderId;
-  const ThankYouPage({super.key, required this.isDarkMode, required this.orderId});
+  final double totalAmount;
+  final List<Map<String, dynamic>> cartItems;
+  final String userName;
+  final String userId;
+  final String paymentMode;
+  final String? transactionId;
+  final String status;
+
+  final VoidCallback onThemeToggle;
+
+  const ThankYouPage({
+    super.key,
+    required this.isDarkMode, 
+    required this.onThemeToggle,
+    required this.orderId,
+    required this.totalAmount,
+    required this.cartItems,
+    required this.userName,
+    required this.userId,
+    required this.paymentMode,
+    this.transactionId,
+    required this.status,
+  });
+
+  @override
+  State<ThankYouPage> createState() => _ThankYouPageState();
+}
+
+class _ThankYouPageState extends State<ThankYouPage> with TickerProviderStateMixin {
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
+  bool _showOrderCard = false;
+  late AnimationController _celebrationController;
+  final List<EmojiParticle> _particles = [];
+  Timer? _orderTimer;
+  int _secondsRemaining = 15 * 60;
+
+  @override
+  void initState() {
+    super.initState();
+    _celebrationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..addListener(() {
+        setState(() {});
+      });
+
+    _generateParticles();
+    _celebrationController.forward();
+
+    // Show order card after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showOrderCard = true;
+        });
+        _startTimer();
+      }
+    });
+  }
+
+  void _generateParticles() {
+    final random = math.Random();
+    final emojis = ['🔥', '🎁', '✨', '🎈', '🎉', '💥'];
+    for (int i = 0; i < 50; i++) {
+      _particles.add(EmojiParticle(
+        emoji: emojis[random.nextInt(emojis.length)],
+        angle: random.nextDouble() * 2 * math.pi,
+        speed: random.nextDouble() * 4 + 2,
+        size: random.nextDouble() * 20 + 20,
+      ));
+    }
+  }
+
+  void _startTimer() {
+    _orderTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        setState(() {
+          _secondsRemaining--;
+        });
+      } else {
+        _orderTimer?.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _celebrationController.dispose();
+    _orderTimer?.cancel();
+    super.dispose();
+  }
+
+  String _formatTime(int seconds) {
+    int mins = seconds ~/ 60;
+    int secs = seconds % 60;
+    return '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF0D0E17) : Colors.white,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF2D7A3E),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check, size: 80, color: Colors.white),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'Thank You!',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Your order has been placed successfully. We are preparing it for delivery.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: isDarkMode ? Colors.white70 : Colors.black54,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDarkMode ? Colors.white12 : Colors.black12),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Order ID',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDarkMode ? Colors.white38 : Colors.black38,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
+      backgroundColor: isDark ? const Color(0xFF0D0E17) : const Color(0xFFF5F7F9),
+      body: Stack(
+        children: [
+          // Celebration Animation
+          if (!_showOrderCard)
+            Center(
+              child: Stack(
+                children: _particles.map((p) {
+                  double progress = _celebrationController.value;
+                  double dx = math.cos(p.angle) * p.speed * 100 * progress;
+                  double dy = math.sin(p.angle) * p.speed * 100 * progress + (progress * progress * 200);
+                  double opacity = (1 - progress).clamp(0.0, 1.0);
+                  
+                  return Transform.translate(
+                    offset: Offset(dx, dy),
+                    child: Opacity(
+                      opacity: opacity,
+                      child: Text(p.emoji, style: TextStyle(fontSize: p.size)),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '#$orderId',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? const Color(0xFF3D5AFE) : const Color(0xFF2D7A3E),
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 48),
-              SizedBox(
-                width: 200,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2D7A3E),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+
+          if (!_showOrderCard)
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Processing Order...', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                  const SizedBox(height: 20),
+                  const CircularProgressIndicator(color: Colors.blueAccent),
+                ],
+              ),
+            ),
+
+          // Order Success Card
+          if (_showOrderCard)
+            AnimatedOpacity(
+              opacity: _showOrderCard ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 800),
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Container(
+                    width: math.min(MediaQuery.of(context).size.width * 0.9, 450),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1F202D) : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header with status
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          width: double.infinity,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF2D7A3E),
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(24),
+                              topRight: Radius.circular(24),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(Icons.check_circle, size: 64, color: Colors.white),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Order Placed!',
+                                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                'Order #${widget.orderId}',
+                                style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                                // Timer Section
+                              Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      const Text('Arriving in', style: TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold)),
+                                      Text(
+                                        _formatTime(_secondsRemaining),
+                                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.orange),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              
+                              // User & Order Info Card
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildInfoRow('User Name', widget.userName, isDark),
+                                    _buildInfoRow('User ID', widget.userId, isDark),
+                                    const Divider(height: 24),
+                                    _buildInfoRow('Order ID', widget.orderId, isDark),
+                                    _buildInfoRow('Payment Mode', widget.paymentMode, isDark),
+                                    if (widget.transactionId != null)
+                                      _buildInfoRow('Transaction ID', widget.transactionId!, isDark),
+                                    _buildInfoRow('Status', widget.status, isDark, valueColor: widget.status == 'Online' ? Colors.blue : Colors.orange),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              
+                              Text('Product Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
+                              const SizedBox(height: 8),
+                              ...widget.cartItems.map((item) => Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  children: [
+                                    Text('${item['qty']}x ', style: const TextStyle(color: Colors.grey)),
+                                    Expanded(child: Text(item['name'], style: TextStyle(color: isDark ? Colors.white70 : Colors.black87))),
+                                    Text('₹${item['price']}', style: TextStyle(fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black)),
+                                  ],
+                                ),
+                              )),
+                              const Divider(height: 32),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Total Amount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                  Text('₹${widget.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D7A3E))),
+                                ],
+                              ),
+                              const SizedBox(height: 32),
+                              
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: ElevatedButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF2D7A3E),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text('Back to Home', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: const Text('Back to Home', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
     );
   }
+
+  Widget _buildInfoRow(String label, String value, bool isDark, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text(value, style: TextStyle(color: valueColor ?? (isDark ? Colors.white70 : Colors.black87), fontSize: 13, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+}
+
+class EmojiParticle {
+  final String emoji;
+  final double angle;
+  final double speed;
+  final double size;
+
+  EmojiParticle({
+    required this.emoji,
+    required this.angle,
+    required this.speed,
+    required this.size,
+  });
 }
 
 extension RowAnim on Widget {

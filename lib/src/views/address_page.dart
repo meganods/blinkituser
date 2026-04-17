@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import './add_address_page.dart';
 import './payment_page.dart';
+import './orders_page.dart';
+import './login_page.dart';
 import '../widgets/kb_logo.dart';
 
 class Product {
@@ -18,24 +22,34 @@ class Product {
 }
 
 Map<String, List<Product>> categoryProducts = {
-  "Fruits & Vegetables": [
-    Product(name: "Tomato", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&fit=crop", price: 20),
-    Product(name: "Potato", image: "https://images.unsplash.com/photo-1518977676601-b53f02bad675?w=400&fit=crop", price: 30),
-    Product(name: "Onion", image: "https://images.unsplash.com/photo-1508747703725-719777637510?w=400&fit=crop", price: 25),
-  ],
-  "Snacks & Munchies": [
-    Product(name: "Lays Classic", image: "https://images.unsplash.com/photo-1566417713040-47b07bc271f4?w=400&fit=crop", price: 20),
-    Product(name: "Kurkure", image: "https://images.unsplash.com/photo-1600271886395-d22f18962883?w=400&fit=crop", price: 15),
-    Product(name: "Doritos", image: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&fit=crop", price: 30),
-  ],
+  "Fruits & Vegetables": List.generate(10, (i) => Product(name: "Vegetable ${i+1}", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&fit=crop", price: 20.0 + i)),
+  "Snacks & Munchies": List.generate(10, (i) => Product(name: "Snack ${i+1}", image: "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400&fit=crop", price: 15.0 + i)),
+  "Dairy, Bread & Eggs": List.generate(10, (i) => Product(name: "Dairy ${i+1}", image: "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&fit=crop", price: 30.0 + i)),
+  "Cold Drinks & Juices": List.generate(10, (i) => Product(name: "Drink ${i+1}", image: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&fit=crop", price: 25.0 + i)),
+  "Paan Corner": List.generate(10, (i) => Product(name: "Paan Item ${i+1}", image: "https://images.unsplash.com/photo-1626074353765-517a681e40be?w=400&fit=crop", price: 10.0 + i)),
+  "Breakfast & Instant Food": List.generate(10, (i) => Product(name: "Breakfast ${i+1}", image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&fit=crop", price: 40.0 + i)),
+  "Masala, Oil & More": List.generate(10, (i) => Product(name: "Spice ${i+1}", image: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&fit=crop", price: 50.0 + i)),
+  "Sauces & Spreads": List.generate(10, (i) => Product(name: "Sauce ${i+1}", image: "https://images.unsplash.com/photo-1470333738027-5082f71b897f?w=400&fit=crop", price: 45.0 + i)),
+  "Chicken, Meat & Fish": List.generate(10, (i) => Product(name: "Meat ${i+1}", image: "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=400&fit=crop", price: 120.0 + i)),
+  "Organic & Healthy": List.generate(10, (i) => Product(name: "Healthy ${i+1}", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&fit=crop", price: 80.0 + i)),
+  "Baby Care": List.generate(10, (i) => Product(name: "Baby ${i+1}", image: "https://images.unsplash.com/photo-1515488435882-6242a8a86071?w=400&fit=crop", price: 200.0 + i)),
+  "Pharma & Wellness": List.generate(10, (i) => Product(name: "Pharma ${i+1}", image: "https://images.unsplash.com/photo-1628771065518-0d82f1938462?w=400&fit=crop", price: 15.0 + i)),
+  "Cleaning Essentials": List.generate(10, (i) => Product(name: "Clean ${i+1}", image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&fit=crop", price: 90.0 + i)),
+  "Home & Office": List.generate(10, (i) => Product(name: "Work ${i+1}", image: "https://images.unsplash.com/photo-1593060974447-0985da33568c?w=400&fit=crop", price: 300.0 + i)),
+  "Personal Care": List.generate(10, (i) => Product(name: "Care ${i+1}", image: "https://images.unsplash.com/photo-1522066804558-fcd05b819e6f?w=400&fit=crop", price: 55.0 + i)),
+  "Pet Care": List.generate(10, (i) => Product(name: "Pet ${i+1}", image: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400&fit=crop", price: 110.0 + i)),
+  "Bakery & Biscuits": List.generate(10, (i) => Product(name: "Bake ${i+1}", image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&fit=crop", price: 35.0 + i)),
+  "Tea & Coffee": List.generate(10, (i) => Product(name: "Tea ${i+1}", image: "https://images.unsplash.com/photo-1544787210-22d2dc479b7b?w=400&fit=crop", price: 25.0 + i)),
+  "Atta & Rice": List.generate(10, (i) => Product(name: "Atta ${i+1}", image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&fit=crop", price: 60.0 + i)),
+  "Sweet Tooth": List.generate(10, (i) => Product(name: "Sweet ${i+1}", image: "https://images.unsplash.com/photo-1532117892888-38437812674e?w=400&fit=crop", price: 40.0 + i)),
 };
 
 class CategoryItem {
   final String label;
-  final IconData icon;
+  final String imageUrl;
   final Color color;
 
-  CategoryItem({required this.label, required this.icon, required this.color});
+  CategoryItem({required this.label, required this.imageUrl, required this.color});
 }
 
 class ProductItem {
@@ -44,6 +58,7 @@ class ProductItem {
   final String price;
   final String deliveryMins;
   final String imageUrl;
+  final List<String> images;
   final String category;
 
   ProductItem({
@@ -52,8 +67,9 @@ class ProductItem {
     required this.price,
     required this.deliveryMins,
     required this.imageUrl,
+    List<String>? images,
     required this.category,
-  });
+  }) : this.images = images ?? [imageUrl];
 }
 
 class AddressPage extends StatefulWidget {
@@ -70,12 +86,14 @@ class AddressPage extends StatefulWidget {
   State<AddressPage> createState() => _AddressPageState();
 }
 
-class _AddressPageState extends State<AddressPage> {
+class _AddressPageState extends State<AddressPage> with SingleTickerProviderStateMixin {
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
   String _address = 'Gaur city center';
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   int _selectedCategoryIndex = 0;
   final Map<int, int> _productQty = {}; // productIndex -> qty
+  final Set<int> _favoriteProducts = {}; // Successfully mocked favorites
   bool _isDonationEnabled = false;
   int _selectedTip = 0;
   int _selectedAddressIndex = 0;
@@ -156,40 +174,33 @@ class _AddressPageState extends State<AddressPage> {
   int get totalCartItems => _productQty.values.fold(0, (sum, val) => sum + val);
 
   final List<CategoryItem> categories = [
-    CategoryItem(label: 'All', icon: Icons.dashboard, color: const Color(0xFF39D2FF)),
-    CategoryItem(label: 'Paan Corner', icon: Icons.local_fire_department, color: const Color(0xFFFFB84D)),
-    CategoryItem(label: 'Dairy, Bread & Eggs', icon: Icons.shopping_basket, color: const Color(0xFF9C27B0)),
-    CategoryItem(label: 'Fruits & Vegetables', icon: Icons.eco, color: const Color(0xFF4CAF50)),
-    CategoryItem(label: 'Cold Drinks & Juices', icon: Icons.local_cafe, color: const Color(0xFF2196F3)),
-    CategoryItem(label: 'Snacks & Munchies', icon: Icons.emoji_food_beverage, color: const Color(0xFFFF9800)),
-    CategoryItem(label: 'Breakfast & Instant Food', icon: Icons.restaurant, color: const Color(0xFFE91E63)),
-    CategoryItem(label: 'Sweet Tooth', icon: Icons.cake, color: const Color(0xFFF44336)),
-    CategoryItem(label: 'Bakery & Biscuits', icon: Icons.bakery_dining, color: const Color(0xFFD2691E)),
-    CategoryItem(label: 'Tea, Coffee & Milk Drinks', icon: Icons.local_drink, color: const Color(0xFF8B4513)),
-    CategoryItem(label: 'Atta, Rice & Dal', icon: Icons.grain, color: const Color(0xFFCD853F)),
-    CategoryItem(label: 'Masala, Oil & More', icon: Icons.opacity, color: const Color(0xFFDEB887)),
-    CategoryItem(label: 'Sauces & Spreads', icon: Icons.local_dining, color: const Color(0xFFBDB76B)),
-    CategoryItem(label: 'Chicken, Meat & Fish', icon: Icons.fastfood, color: const Color(0xFFA52A2A)),
-    CategoryItem(label: 'Organic & Healthy Living', icon: Icons.local_hospital, color: const Color(0xFF20B2AA)),
-    CategoryItem(label: 'Baby Care', icon: Icons.child_care, color: const Color(0xFFFFB6C1)),
-    CategoryItem(label: 'Pharma & Wellness', icon: Icons.medical_services, color: const Color(0xFF00CED1)),
-    CategoryItem(label: 'Cleaning Essentials', icon: Icons.cleaning_services, color: const Color(0xFF696969)),
-    CategoryItem(label: 'Home & Office', icon: Icons.home, color: const Color(0xFF8B7355)),
-    CategoryItem(label: 'Personal Care', icon: Icons.spa, color: const Color(0xFFDDA0DD)),
-    CategoryItem(label: 'Pet Care', icon: Icons.pets, color: const Color(0xFF6495ED)),
+    CategoryItem(label: 'Dairy, Bread & Eggs', imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=600&fit=crop', color: const Color(0xFFE8F5E9)),
+    CategoryItem(label: 'Fruits & Vegetables', imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=600&fit=crop', color: const Color(0xFFFFF3E0)),
+    CategoryItem(label: 'Cold Drinks & Juices', imageUrl: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&h=600&fit=crop', color: const Color(0xFFF3E5F5)),
+    CategoryItem(label: 'Snacks & Munchies', imageUrl: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400&h=600&fit=crop', color: const Color(0xFFE1F5FE)),
+    CategoryItem(label: 'Breakfast & Fast Food', imageUrl: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=600&fit=crop', color: const Color(0xFFFFFDE7)),
+    CategoryItem(label: 'Chicken & Meat', imageUrl: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=400&h=600&fit=crop', color: const Color(0xFFFFEBEE)),
+    CategoryItem(label: 'Organic & Healthy', imageUrl: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=600&fit=crop', color: const Color(0xFFE0F2F1)),
+    CategoryItem(label: 'Baby Care', imageUrl: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&h=600&fit=crop', color: const Color(0xFFFFF1F1)),
+    CategoryItem(label: 'Personal Care', imageUrl: 'https://images.unsplash.com/photo-1522066804558-fcd05b819e6f?w=400&h=600&fit=crop', color: const Color(0xFFFDF5E6)),
+    CategoryItem(label: 'Cleaning Essentials', imageUrl: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=600&fit=crop', color: const Color(0xFFF5F5F5)),
+    CategoryItem(label: 'Home & Office', imageUrl: 'https://images.unsplash.com/photo-1593060974447-0985da33568c?w=400&h=600&fit=crop', color: const Color(0xFFEFEBE9)),
+    CategoryItem(label: 'Pet Care', imageUrl: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400&h=600&fit=crop', color: const Color(0xFFF0F4C3)),
+    CategoryItem(label: 'Bakery & Biscuits', imageUrl: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&h=600&fit=crop', color: const Color(0xFFFFF8E1)),
+    CategoryItem(label: 'Tea & Coffee', imageUrl: 'https://images.unsplash.com/photo-1544787210-22d2dc479b7b?w=400&h=600&fit=crop', color: const Color(0xFFE0F2F1)),
   ];
 
   final List<ProductItem> allProducts = [
     // All / Dairy, Bread & Eggs
-    ProductItem(name: 'Amul Gold Full Cream Milk', size: '500 ml', price: '₹35', deliveryMins: '17', imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=200&h=200&fit=crop', category: 'All'),
-    ProductItem(name: 'Britannia Whole Wheat Bread', size: '400 g', price: '₹42', deliveryMins: '12', imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200&h=200&fit=crop', category: 'All'),
-    ProductItem(name: 'Farm Fresh Eggs', size: '6 pcs', price: '₹58', deliveryMins: '15', imageUrl: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=200&h=200&fit=crop', category: 'All'),
-    ProductItem(name: 'Amul Butter Salted', size: '100 g', price: '₹56', deliveryMins: '19', imageUrl: 'https://images.unsplash.com/photo-1632942070066-00f4f4e3b28c?w=200&h=200&fit=crop', category: 'All'),
-    ProductItem(name: 'Parle-G Biscuits', size: '800 g', price: '₹50', deliveryMins: '10', imageUrl: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=200&h=200&fit=crop', category: 'All'),
-    ProductItem(name: 'Aashirvaad Atta', size: '5 kg', price: '₹275', deliveryMins: '20', imageUrl: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=200&h=200&fit=crop', category: 'All'),
-    ProductItem(name: 'Fortune Sunflower Oil', size: '1 L', price: '₹148', deliveryMins: '18', imageUrl: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=200&h=200&fit=crop', category: 'All'),
-    ProductItem(name: 'Tata Salt', size: '1 kg', price: '₹22', deliveryMins: '11', imageUrl: 'https://images.unsplash.com/photo-1588315029754-2dd089d39a1a?w=200&h=200&fit=crop', category: 'All'),
-    ProductItem(name: 'Maggi 2-Minute Noodles', size: '560 g', price: '₹82', deliveryMins: '14', imageUrl: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=200&h=200&fit=crop', category: 'All'),
+    ProductItem(name: 'Amul Gold Full Cream Milk', size: '500 ml', price: '₹35', deliveryMins: '17', imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=200&h=200&fit=crop', category: 'All', images: ['https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=400', 'https://images.unsplash.com/photo-1563636619-e910dc4939a8?w=400&h=400']),
+    ProductItem(name: 'Britannia Whole Wheat Bread', size: '400 g', price: '₹42', deliveryMins: '12', imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200&h=200&fit=crop', category: 'All', images: ['https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400', 'https://images.unsplash.com/photo-1559811814-e2c573a7aa92?w=400&h=400']),
+    ProductItem(name: 'Farm Fresh Eggs', size: '6 pcs', price: '₹58', deliveryMins: '15', imageUrl: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=200&h=200&fit=crop', category: 'All', images: ['https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&h=400', 'https://images.unsplash.com/photo-1498654077810-12c21d4d6dc3?w=400&h=400']),
+    ProductItem(name: 'Amul Butter Salted', size: '100 g', price: '₹56', deliveryMins: '19', imageUrl: 'https://images.unsplash.com/photo-1632942070066-00f4f4e3b28c?w=200&h=200&fit=crop', category: 'All', images: ['https://images.unsplash.com/photo-1632942070066-00f4f4e3b28c?w=400&h=400', 'https://images.unsplash.com/photo-1589923188900-85dae523342b?w=400&h=400']),
+    ProductItem(name: 'Parle-G Biscuits', size: '800 g', price: '₹50', deliveryMins: '10', imageUrl: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=200&h=200&fit=crop', category: 'All', images: ['https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400', 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400']),
+    ProductItem(name: 'Aashirvaad Atta', size: '5 kg', price: '₹275', deliveryMins: '20', imageUrl: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=200&h=200&fit=crop', category: 'All', images: ['https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&h=400', 'https://images.unsplash.com/photo-1543258103-a62bdc019964?w=400&h=400']),
+    ProductItem(name: 'Fortune Sunflower Oil', size: '1 L', price: '₹148', deliveryMins: '18', imageUrl: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=200&h=200&fit=crop', category: 'All', images: ['https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=400&h=400']),
+    ProductItem(name: 'Tata Salt', size: '1 kg', price: '₹22', deliveryMins: '11', imageUrl: 'https://images.unsplash.com/photo-1588315029754-2dd089d39a1a?w=200&h=200&fit=crop', category: 'All', images: ['https://images.unsplash.com/photo-1588315029754-2dd089d39a1a?w=400&h=400']),
+    ProductItem(name: 'Maggi 2-Minute Noodles', size: '560 g', price: '₹82', deliveryMins: '14', imageUrl: 'https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=200&h=200&fit=crop', category: 'All', images: ['https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=400&h=400']),
     // Fruits & Vegetables
     ProductItem(name: 'Fresh Tomatoes', size: '500 g', price: '₹28', deliveryMins: '15', imageUrl: 'https://images.unsplash.com/photo-1607305387299-a3d9611cd469?w=200&h=200&fit=crop', category: 'Fruits & Vegetables'),
     ProductItem(name: 'Green Spinach', size: '250 g', price: '₹22', deliveryMins: '13', imageUrl: 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=200&h=200&fit=crop', category: 'Fruits & Vegetables'),
@@ -418,7 +429,7 @@ class _AddressPageState extends State<AddressPage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: widget.isDarkMode
+            colors: isDark
                 ? [const Color(0xFF090A12), const Color(0xFF110F23)]
                 : [const Color(0xFFF0F0F0), const Color(0xFFE8E8E8)],
           ),
@@ -429,7 +440,7 @@ class _AddressPageState extends State<AddressPage> {
             SliverPersistentHeader(
               pinned: true,
               delegate: _SearchHeaderDelegate(
-                isDarkMode: widget.isDarkMode,
+                isDarkMode: isDark,
                 address: _address,
                 userName: _userName,
                 searchController: _searchController,
@@ -443,108 +454,54 @@ class _AddressPageState extends State<AddressPage> {
                 onAccountTap: (ctx, pos) => _showAccountMenu(ctx, pos),
               ),
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-                child: Column(
-                  children: [
-                    // Content start
-                  ],
-                ),
-              ),
-            ),
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  const SizedBox(height: 20),
+                  _buildSectionHeader('Shop by Category'),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
+                  Container(
+                    height: 480,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.02) : Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: GridView.builder(
                       controller: _categoryScrollController,
+                      padding: const EdgeInsets.all(16),
                       physics: const BouncingScrollPhysics(),
                       scrollDirection: Axis.horizontal,
-                      itemCount: _showMoreCategories ? categories.length : (categories.length > 9 ? 9 : categories.length),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisExtent: 180, // Card width
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: categories.length,
                       itemBuilder: (context, index) {
-                        if (!_showMoreCategories && categories.length > 9 && index == 8) {
-                          return _buildMoreCategoryItem();
-                        }
-                        final category = categories[index];
-                        final isSelected = _selectedCategoryIndex == index;
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedCategoryIndex = index;
-                              });
-                              if (categoryProducts.containsKey(category.label)) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ProductScreen(
-                                      categoryName: category.label,
-                                      isDarkMode: widget.isDarkMode,
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: isSelected
-                                        ? category.color.withOpacity(0.2)
-                                        : (widget.isDarkMode
-                                            ? Colors.white.withOpacity(0.08)
-                                            : Colors.black.withOpacity(0.08)),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? category.color
-                                          : (widget.isDarkMode
-                                              ? Colors.white.withOpacity(0.2)
-                                              : Colors.black.withOpacity(0.2)),
-                                      width: isSelected ? 2 : 1,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    category.icon,
-                                    color: category.color,
-                                    size: 28,
-                                  ),
+                        return _CategoryHoverCard(
+                          category: categories[index],
+                          isDark: isDark,
+                          onTap: () {
+                            setState(() => _selectedCategoryIndex = index);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductScreen(
+                                  categoryName: categories[index].label,
+                                  isDarkMode: isDark,
                                 ),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                  width: 75,
-                                  child: Text(
-                                    category.label,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? (widget.isDarkMode ? Colors.white : Colors.black)
-                                          : (widget.isDarkMode
-                                              ? Colors.white70
-                                              : Colors.black54),
-                                      fontSize: 10,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
+                  _buildSectionHeader('Handpicked for You'),
+                  const SizedBox(height: 16),
                   SizedBox(
                     height: 180,
                     child: PageView.builder(
@@ -649,7 +606,7 @@ class _AddressPageState extends State<AddressPage> {
                             decoration: BoxDecoration(
                               color: _currentBannerIndex == index
                                   ? const Color(0xFF27C93F)
-                                  : (widget.isDarkMode ? Colors.white24 : Colors.black12),
+                                  : (isDark ? Colors.white24 : Colors.black12),
                               borderRadius: BorderRadius.circular(3),
                             ),
                           );
@@ -678,7 +635,7 @@ class _AddressPageState extends State<AddressPage> {
                                 MaterialPageRoute(
                                   builder: (context) => ProductScreen(
                                     categoryName: "Fruits & Vegetables",
-                                    isDarkMode: widget.isDarkMode,
+                                    isDarkMode: isDark,
                                   ),
                                 ),
                               ),
@@ -697,7 +654,7 @@ class _AddressPageState extends State<AddressPage> {
                                 MaterialPageRoute(
                                   builder: (context) => ProductScreen(
                                     categoryName: "Snacks & Munchies",
-                                    isDarkMode: widget.isDarkMode,
+                                    isDarkMode: isDark,
                                   ),
                                 ),
                               ),
@@ -924,7 +881,7 @@ class _AddressPageState extends State<AddressPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: widget.isDarkMode
+                  color: isDark
                       ? Colors.white.withOpacity(0.06)
                       : Colors.black.withOpacity(0.06),
                   borderRadius: BorderRadius.circular(28),
@@ -934,7 +891,7 @@ class _AddressPageState extends State<AddressPage> {
                     Text(
                       'Welcome to Blinkite',
                       style: TextStyle(
-                        color: widget.isDarkMode ? Colors.white : Colors.black,
+                        color: isDark ? Colors.white : Colors.black,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -954,7 +911,7 @@ class _AddressPageState extends State<AddressPage> {
                               width: 130,
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                               decoration: BoxDecoration(
-                                color: widget.isDarkMode
+                                color: isDark
                                     ? Colors.white.withOpacity(0.08)
                                     : Colors.black.withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(20),
@@ -976,7 +933,7 @@ class _AddressPageState extends State<AddressPage> {
                             Text(
                               'Grab your bag instantly',
                               style: TextStyle(
-                                color: widget.isDarkMode
+                                color: isDark
                                     ? Colors.white70
                                     : Colors.black54,
                                 fontSize: 14,
@@ -1002,7 +959,7 @@ class _AddressPageState extends State<AddressPage> {
                   Text(
                     selectedCategory == 'All' ? 'Browse Categories' : selectedCategory,
                     style: TextStyle(
-                      color: widget.isDarkMode ? Colors.white : Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1034,7 +991,7 @@ class _AddressPageState extends State<AddressPage> {
                     : allProducts.take(9).toList();
 
                 return SizedBox(
-                  height: 260,
+                  height: 300,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: productList.length,
@@ -1080,7 +1037,7 @@ class _AddressPageState extends State<AddressPage> {
                         Text(
                           'Dairy, Bread & Eggs',
                           style: TextStyle(
-                            color: widget.isDarkMode ? Colors.white : Colors.black,
+                            color: isDark ? Colors.white : Colors.black,
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                           ),
@@ -1091,13 +1048,13 @@ class _AddressPageState extends State<AddressPage> {
                     Text(
                       'Fresh from farm to your door',
                       style: TextStyle(
-                        color: widget.isDarkMode ? Colors.white54 : Colors.black45,
+                        color: isDark ? Colors.white54 : Colors.black45,
                         fontSize: 13,
                       ),
                     ),
                     const SizedBox(height: 14),
                     SizedBox(
-                      height: 260,
+                      height: 300,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: totalItems,
@@ -1113,7 +1070,7 @@ class _AddressPageState extends State<AddressPage> {
                                       allProducts: allProducts,
                                       categoryFilter: 'Dairy, Bread & Eggs',
                                       initialCart: Map.from(_productQty),
-                                      isDarkMode: widget.isDarkMode,
+                                      isDarkMode: isDark,
                                     ),
                                   ),
                                 );
@@ -1128,9 +1085,9 @@ class _AddressPageState extends State<AddressPage> {
                                 width: 140,
                                 margin: const EdgeInsets.only(left: 10, right: 10),
                                 decoration: BoxDecoration(
-                                  color: widget.isDarkMode ? const Color(0xFF1A1B28) : Colors.white,
+                                  color: isDark ? const Color(0xFF1A1B28) : Colors.white,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: widget.isDarkMode ? Colors.white12 : Colors.black12, width: 1),
+                                  border: Border.all(color: isDark ? Colors.white12 : Colors.black12, width: 1),
                                 ),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -1148,7 +1105,7 @@ class _AddressPageState extends State<AddressPage> {
                                       'See All\n${dairyProducts.length} Products',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
-                                        color: widget.isDarkMode ? Colors.white : Colors.black87,
+                                        color: isDark ? Colors.white : Colors.black87,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 14,
                                       ),
@@ -1170,6 +1127,11 @@ class _AddressPageState extends State<AddressPage> {
                   ],
                 );
               }),
+              const SizedBox(height: 60),
+              
+              // ── FOOTER SECTION ──────────────────────────────────
+              _buildFooter(),
+              const SizedBox(height: 20),
             ]),
           ),
         ),
@@ -1182,171 +1144,441 @@ class _AddressPageState extends State<AddressPage> {
   // ── Product Card ─────────────────────────────────────────────
   Widget _buildProductCard(ProductItem product, int index) {
     final qty = _productQty[index] ?? 0;
-    final bool isDark = widget.isDarkMode;
-    final cardBg = isDark ? const Color(0xFF1A1B28) : Colors.white;
-    final borderColor = isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.08);
 
-    return Container(
-      width: 160,
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Product image
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.network(
-              product.imageUrl,
-              width: 160,
-              height: 120,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                width: 160,
-                height: 120,
-                color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.grey.shade100,
-                child: Icon(
-                  Icons.image_not_supported_outlined,
-                  color: isDark ? Colors.white30 : Colors.black26,
-                  size: 36,
+    // Forced white background as per user request
+    const cardBg = Colors.white;
+    const borderColor = Color(0xFFF1F1F1);
+    
+    // Use dark text colors since background is white
+    const primaryTextColor = Colors.black;
+    const secondaryTextColor = Colors.black54;
+    const tertiaryTextColor = Colors.black38;
+
+    return GestureDetector(
+      onTap: () => _showProductDetail(product, index),
+      child: Container(
+        width: 170,
+        height: 280,
+        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product image
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Center(
+                  child: Image.network(
+                    product.imageUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.image_not_supported_outlined,
+                      color: Colors.black12,
+                      size: 50,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Delivery time badge
-                Row(
-                  children: [
-                    Icon(
-                      Icons.timer_outlined,
-                      size: 13,
-                      color: isDark ? Colors.white54 : Colors.black45,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   // Delivery time badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F3F3),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${product.deliveryMins} MINS',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white54 : Colors.black45,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.timer_outlined,
+                          size: 11,
+                          color: Colors.black87,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${product.deliveryMins} MINS',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black87,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                // Product name
-                Text(
-                  product.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : Colors.black87,
-                    height: 1.25,
                   ),
-                ),
-                const SizedBox(height: 2),
-                // Size
-                Text(
-                  product.size,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? Colors.white38 : Colors.black38,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Price + ADD button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      product.price,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
+                  const SizedBox(height: 10),
+                  // Product name
+                  Text(
+                    product.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: primaryTextColor,
+                      height: 1.2,
                     ),
-                    // ADD / quantity stepper
-                    qty == 0
-                        ? GestureDetector(
-                            onTap: () => setState(() => _productQty[index] = 1),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 5),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: const Color(0xFF27C93F),
-                                  width: 1.5,
+                  ),
+                  const SizedBox(height: 4),
+                  // Size
+                  Text(
+                    product.size,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: tertiaryTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  // Price + ADD button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        product.price,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: primaryTextColor,
+                        ),
+                      ),
+                      // ADD / quantity stepper
+                      qty == 0
+                          ? GestureDetector(
+                              onTap: () => setState(() => _productQty[index] = 1),
+                              child: Container(
+                                width: 64,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF7FFF9),
+                                  border: Border.all(
+                                    color: const Color(0xFF27C93F),
+                                    width: 1.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'ADD',
-                                style: TextStyle(
-                                  color: Color(0xFF27C93F),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          )
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _qtyButton(
-                                icon: Icons.remove,
-                                onTap: () => setState(() {
-                                  if ((_productQty[index] ?? 1) <= 1) {
-                                    _productQty.remove(index);
-                                  } else {
-                                    _productQty[index] = (_productQty[index] ?? 1) - 1;
-                                  }
-                                }),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 6),
-                                child: Text(
-                                  '$qty',
-                                  style: const TextStyle(
-                                    color: Color(0xFF27C93F),
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 14,
+                                child: const Center(
+                                  child: Text(
+                                    'ADD',
+                                    style: TextStyle(
+                                      color: Color(0xFF27C93F),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                 ),
                               ),
-                              _qtyButton(
-                                icon: Icons.add,
-                                onTap: () => setState(
-                                    () => _productQty[index] = (qty) + 1),
+                            )
+                          : Container(
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF27C93F),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _qtyButtonMinimal(
+                                    icon: Icons.remove,
+                                    onTap: () => setState(() {
+                                      if ((_productQty[index] ?? 1) <= 1) {
+                                        _productQty.remove(index);
+                                      } else {
+                                        _productQty[index] = (_productQty[index] ?? 1) - 1;
+                                      }
+                                    }),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                                    child: Text(
+                                      '$qty',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  _qtyButtonMinimal(
+                                    icon: Icons.add,
+                                    onTap: () => setState(
+                                        () => _productQty[index] = (qty) + 1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _qtyButtonMinimal({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Icon(icon, color: Colors.white, size: 14),
+      ),
+    );
+  }
+
+  // ── Product Detail Card ──────────────────────────────────────
+  void _showProductDetail(ProductItem product, int index) {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final bool isFavorite = _favoriteProducts.contains(index);
+          final int qty = _productQty[index] ?? 0;
+          final PageController pageController = PageController();
+          
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              width: 350, // Roughly 3.5 inches equivalent width
+              height: 580, // Roughly 7 inches equivalent height
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1F2E) : Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30),
+                child: Column(
+                  children: [
+                    // Top Image Stack
+                    Stack(
+                      children: [
+                        SizedBox(
+                          height: 300,
+                          child: PageView.builder(
+                            controller: pageController,
+                            itemCount: product.images.length,
+                            itemBuilder: (context, i) => Image.network(
+                              product.images[i],
+                              fit: BoxFit.cover,
+                            ),
                           ),
+                        ),
+                        // Close Button
+                        Positioned(
+                          top: 16,
+                          left: 16,
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: CircleAvatar(
+                              backgroundColor: Colors.black.withOpacity(0.4),
+                              child: const Icon(Icons.close, color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ),
+                        // Favorite Button
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_favoriteProducts.contains(index)) {
+                                  _favoriteProducts.remove(index);
+                                } else {
+                                  _favoriteProducts.add(index);
+                                }
+                              });
+                              setDialogState(() {}); // Update local dialog state
+                            },
+                            child: CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                isFavorite ? Icons.favorite : Icons.favorite_border,
+                                color: isFavorite ? Colors.red : Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Image Indicator
+                        if (product.images.length > 1)
+                          Positioned(
+                            bottom: 16,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.4),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '${product.images.length} Images',
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    
+                    // Product Info
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    product.name,
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w900,
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    'Fresh',
+                                    style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              product.size,
+                              style: const TextStyle(color: Colors.grey, fontSize: 14),
+                            ),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Premium quality item sourced directly for your convenience. Hand-picked and guaranteed fresh upon delivery.',
+                              style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
+                            ),
+                            const Spacer(),
+                            // Bottom Action Bar
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('MRP', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                                    Text(
+                                      product.price,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                // Add Button
+                                qty == 0
+                                  ? ElevatedButton(
+                                      onPressed: () {
+                                        setState(() => _productQty[index] = 1);
+                                        setDialogState(() {});
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF27C93F),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        elevation: 0,
+                                      ),
+                                      child: const Text('ADD', style: TextStyle(fontWeight: FontWeight.w900)),
+                                    )
+                                  : Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF27C93F),
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          _qtyButton(
+                                            icon: Icons.remove,
+                                            onTap: () {
+                                              setState(() {
+                                                if ((_productQty[index] ?? 1) <= 1) {
+                                                  _productQty.remove(index);
+                                                } else {
+                                                  _productQty[index] = (_productQty[index] ?? 1) - 1;
+                                                }
+                                              });
+                                              setDialogState(() {});
+                                            },
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                                            child: Text(
+                                              '$qty',
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+                                            ),
+                                          ),
+                                          _qtyButton(
+                                            icon: Icons.add,
+                                            onTap: () {
+                                              setState(() => _productQty[index] = (qty) + 1);
+                                              setDialogState(() {});
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -1375,7 +1607,7 @@ class _AddressPageState extends State<AddressPage> {
     required Color textColor,
     VoidCallback? onTap,
   }) {
-    final bool isDark = widget.isDarkMode;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1499,7 +1731,7 @@ class _AddressPageState extends State<AddressPage> {
         Text(
           label,
           style: TextStyle(
-            color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+            color: isDark ? Colors.white70 : Colors.black54,
             fontSize: 13,
           ),
         ),
@@ -1516,7 +1748,6 @@ class _AddressPageState extends State<AddressPage> {
     required Color iconColor,
     required VoidCallback onTap,
   }) {
-    final bool isDark = widget.isDarkMode;
     // Determine text color based on card brightness
     final bool isLightCard = bgColor.computeLuminance() > 0.5;
     final Color textColor = isLightCard ? const Color(0xFF1A1A1A) : Colors.white;
@@ -1612,7 +1843,7 @@ class _AddressPageState extends State<AddressPage> {
             return Container(
               height: MediaQuery.of(context).size.height * 0.9,
               decoration: BoxDecoration(
-                color: widget.isDarkMode ? const Color(0xFF161726) : const Color(0xFFF5F7F9),
+                color: isDark ? const Color(0xFF161726) : const Color(0xFFF5F7F9),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: Column(
@@ -1657,7 +1888,7 @@ class _AddressPageState extends State<AddressPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? const Color(0xFF161726) : Colors.white,
+        color: isDark ? const Color(0xFF161726) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
@@ -1674,13 +1905,13 @@ class _AddressPageState extends State<AddressPage> {
             children: [
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: Icon(Icons.arrow_back, color: widget.isDarkMode ? Colors.white : Colors.black),
+                icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : Colors.black),
               ),
               const SizedBox(width: 8),
               Text(
                 'My Cart',
                 style: TextStyle(
-                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                  color: isDark ? Colors.white : Colors.black,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1704,7 +1935,7 @@ class _AddressPageState extends State<AddressPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -1724,7 +1955,7 @@ class _AddressPageState extends State<AddressPage> {
               Text(
                 'Delivery in 18 minutes',
                 style: TextStyle(
-                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                  color: isDark ? Colors.white : Colors.black,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1732,7 +1963,7 @@ class _AddressPageState extends State<AddressPage> {
               Text(
                 'Shipment of $totalCartItems items',
                 style: TextStyle(
-                  color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                  color: isDark ? Colors.white70 : Colors.black54,
                   fontSize: 14,
                 ),
               ),
@@ -1746,7 +1977,7 @@ class _AddressPageState extends State<AddressPage> {
   Widget _buildCartItemList(List<MapEntry<int, int>> cartItems, StateSetter setModalState) {
     return Container(
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: ListView.separated(
@@ -1754,7 +1985,7 @@ class _AddressPageState extends State<AddressPage> {
         physics: const NeverScrollableScrollPhysics(),
         itemCount: cartItems.length,
         separatorBuilder: (context, index) => Divider(
-          color: widget.isDarkMode ? Colors.white10 : Colors.black12,
+          color: isDark ? Colors.white10 : Colors.black12,
           indent: 80,
         ),
         itemBuilder: (context, index) {
@@ -1776,11 +2007,11 @@ class _AddressPageState extends State<AddressPage> {
                     errorBuilder: (context, error, stackTrace) => Container(
                       width: 60,
                       height: 60,
-                      color: widget.isDarkMode ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+                      color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
                       child: Icon(
                         Icons.image_not_supported_outlined,
                         size: 20,
-                        color: widget.isDarkMode ? Colors.white38 : Colors.grey,
+                        color: isDark ? Colors.white38 : Colors.grey,
                       ),
                     ),
                   ),
@@ -1793,7 +2024,7 @@ class _AddressPageState extends State<AddressPage> {
                       Text(
                         product.name,
                         style: TextStyle(
-                          color: widget.isDarkMode ? Colors.white : Colors.black,
+                          color: isDark ? Colors.white : Colors.black,
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1803,7 +2034,7 @@ class _AddressPageState extends State<AddressPage> {
                       Text(
                         product.size,
                         style: TextStyle(
-                          color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                          color: isDark ? Colors.white70 : Colors.black54,
                           fontSize: 12,
                         ),
                       ),
@@ -1811,7 +2042,7 @@ class _AddressPageState extends State<AddressPage> {
                       Text(
                         product.price,
                         style: TextStyle(
-                          color: widget.isDarkMode ? Colors.white : Colors.black,
+                          color: isDark ? Colors.white : Colors.black,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1870,7 +2101,7 @@ class _AddressPageState extends State<AddressPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -1912,15 +2143,15 @@ class _AddressPageState extends State<AddressPage> {
   Widget _buildBillRow(IconData icon, String label, String value, {bool showInfo = false}) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+        Icon(icon, size: 18, color: isDark ? Colors.white70 : Colors.black54),
         const SizedBox(width: 8),
-        Text(label, style: TextStyle(color: widget.isDarkMode ? Colors.white70 : Colors.black54)),
+        Text(label, style: TextStyle(color: isDark ? Colors.white70 : Colors.black54)),
         if (showInfo) ...[
           const SizedBox(width: 4),
-          Icon(Icons.info_outline, size: 14, color: widget.isDarkMode ? Colors.white38 : Colors.black38),
+          Icon(Icons.info_outline, size: 14, color: isDark ? Colors.white38 : Colors.black38),
         ],
         const Spacer(),
-        Text(value, style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black)),
+        Text(value, style: TextStyle(color: isDark ? Colors.white : Colors.black)),
       ],
     );
   }
@@ -1929,7 +2160,7 @@ class _AddressPageState extends State<AddressPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -1954,7 +2185,7 @@ class _AddressPageState extends State<AddressPage> {
                 Text(
                   'Working towards a malnutrition free India.',
                   style: TextStyle(
-                    color: widget.isDarkMode ? Colors.white54 : Colors.black54,
+                    color: isDark ? Colors.white54 : Colors.black54,
                     fontSize: 12,
                   ),
                 ),
@@ -1986,7 +2217,7 @@ class _AddressPageState extends State<AddressPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? Colors.white.withOpacity(0.05) : Colors.white,
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -2018,7 +2249,7 @@ class _AddressPageState extends State<AddressPage> {
                   child: Text(
                     '₹$tip',
                     style: TextStyle(
-                      color: isSelected ? Colors.white : (widget.isDarkMode ? Colors.white : Colors.black),
+                      color: isSelected ? Colors.white : (isDark ? Colors.white : Colors.black),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -2035,7 +2266,7 @@ class _AddressPageState extends State<AddressPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? const Color(0xFF161726) : Colors.white,
+        color: isDark ? const Color(0xFF161726) : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -2119,7 +2350,7 @@ class _AddressPageState extends State<AddressPage> {
                 bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
               decoration: BoxDecoration(
-                color: widget.isDarkMode ? const Color(0xFF161726) : const Color(0xFFF5F7F9),
+                color: isDark ? const Color(0xFF161726) : const Color(0xFFF5F7F9),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: Column(
@@ -2153,7 +2384,7 @@ class _AddressPageState extends State<AddressPage> {
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => AddAddressPage(isDarkMode: widget.isDarkMode),
+                                builder: (context) => AddAddressPage(isDarkMode: isDark),
                               ),
                             );
                             
@@ -2203,13 +2434,13 @@ class _AddressPageState extends State<AddressPage> {
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: isSelected 
-                                ? (widget.isDarkMode ? Colors.white.withOpacity(0.1) : Colors.white)
-                                : (widget.isDarkMode ? Colors.white.withOpacity(0.03) : Colors.white.withOpacity(0.5)),
+                                ? (isDark ? Colors.white.withOpacity(0.1) : Colors.white)
+                                : (isDark ? Colors.white.withOpacity(0.03) : Colors.white.withOpacity(0.5)),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isSelected 
                                   ? const Color(0xFF2D7A3E)
-                                  : (widget.isDarkMode ? Colors.white10 : Colors.black12),
+                                  : (isDark ? Colors.white10 : Colors.black12),
                                 width: isSelected ? 2 : 1,
                               ),
                             ),
@@ -2237,7 +2468,7 @@ class _AddressPageState extends State<AddressPage> {
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
-                                          color: isSelected ? (widget.isDarkMode ? Colors.white : Colors.black) : Colors.grey,
+                                          color: isSelected ? (isDark ? Colors.white : Colors.black) : Colors.grey,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -2245,7 +2476,7 @@ class _AddressPageState extends State<AddressPage> {
                                         addr['address']!,
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                                          color: isDark ? Colors.white70 : Colors.black54,
                                         ),
                                       ),
                                     ],
@@ -2286,13 +2517,16 @@ class _AddressPageState extends State<AddressPage> {
                           Navigator.push(
                             context,
                             PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) => PaymentPage(
-                                isDarkMode: widget.isDarkMode,
-                                selectedAddress: _savedAddresses[_selectedAddressIndex]['address']!,
-                                selectedAddressType: _savedAddresses[_selectedAddressIndex]['type']!,
-                                totalAmount: totalCartAmount,
-                                cartItems: cartDetails,
-                              ),
+                                pageBuilder: (context, animation, secondaryAnimation) => PaymentPage(
+                                  isDarkMode: isDark,
+                                  onThemeToggle: widget.onThemeToggle,
+                                  selectedAddress: _savedAddresses[_selectedAddressIndex]['address']!,
+                                  selectedAddressType: _savedAddresses[_selectedAddressIndex]['type']!,
+                                  totalAmount: totalCartAmount,
+                                  cartItems: cartDetails,
+                                  userName: _userName,
+                                  userId: _userEmail,
+                                ),
                               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                 const begin = Offset(0.0, 1.0);
                                 const end = Offset.zero;
@@ -2333,7 +2567,7 @@ class _AddressPageState extends State<AddressPage> {
       position: position,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 8,
-      color: widget.isDarkMode ? const Color(0xFF1F202D) : Colors.white,
+      color: isDark ? const Color(0xFF1F202D) : Colors.white,
       items: <PopupMenuEntry>[
         PopupMenuItem(
           enabled: false,
@@ -2345,7 +2579,7 @@ class _AddressPageState extends State<AddressPage> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                  color: isDark ? Colors.white : Colors.black,
                 ),
               ),
               Text(
@@ -2359,10 +2593,6 @@ class _AddressPageState extends State<AddressPage> {
         _buildPopupItem('My Orders', Icons.shopping_bag_outlined),
         _buildPopupItem('Saved Addresses', Icons.location_on_outlined),
         _buildPopupItem('Edit Profile', Icons.edit_outlined),
-        _buildPopupItem('My Prescriptions', Icons.medical_services_outlined),
-        _buildPopupItem('E-Gift Cards', Icons.card_giftcard),
-        _buildPopupItem('FAQ\'s', Icons.help_outline),
-        _buildPopupItem('Account Privacy', Icons.privacy_tip_outlined),
         _buildPopupItem('Log Out', Icons.logout, color: Colors.redAccent),
         const PopupMenuDivider(),
         PopupMenuItem(
@@ -2371,7 +2601,7 @@ class _AddressPageState extends State<AddressPage> {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: widget.isDarkMode ? Colors.white.withOpacity(0.05) : Colors.blue.withOpacity(0.05),
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.blue.withOpacity(0.05),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -2399,11 +2629,6 @@ class _AddressPageState extends State<AddressPage> {
                         'at your doorstep',
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue),
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Scan the QR code and download blinkit app',
-                        style: TextStyle(fontSize: 9, color: Colors.grey),
-                      ),
                     ],
                   ),
                 ),
@@ -2412,9 +2637,31 @@ class _AddressPageState extends State<AddressPage> {
           ),
         ),
       ],
-    ).then((value) {
+    ).then((value) async {
       if (value == 'Edit Profile') {
         _editProfile();
+      } else if (value == 'My Orders') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrdersPage(isDarkMode: isDark),
+          ),
+        );
+      } else if (value == 'Log Out') {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('isMockLoggedIn');
+        await FirebaseAuth.instance.signOut();
+        if (context.mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => LoginPage(
+                onThemeToggle: widget.onThemeToggle,
+                isDarkMode: widget.isDarkMode,
+              ),
+            ),
+            (route) => false,
+          );
+        }
       }
     });
   }
@@ -2436,15 +2683,15 @@ class _AddressPageState extends State<AddressPage> {
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: widget.isDarkMode ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08),
+                color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08),
                 border: Border.all(
-                  color: widget.isDarkMode ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.2),
+                  color: isDark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.2),
                   width: 1,
                 ),
               ),
               child: Icon(
                 Icons.more_horiz,
-                color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                color: isDark ? Colors.white70 : Colors.black54,
                 size: 28,
               ),
             ),
@@ -2455,7 +2702,7 @@ class _AddressPageState extends State<AddressPage> {
                 'More',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+                  color: isDark ? Colors.white70 : Colors.black54,
                   fontSize: 10,
                 ),
               ),
@@ -2483,7 +2730,7 @@ class _AddressPageState extends State<AddressPage> {
           right: 24,
         ),
         decoration: BoxDecoration(
-          color: widget.isDarkMode ? const Color(0xFF1F202D) : Colors.white,
+          color: isDark ? const Color(0xFF1F202D) : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: Column(
@@ -2498,12 +2745,12 @@ class _AddressPageState extends State<AddressPage> {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: widget.isDarkMode ? Colors.white : Colors.black,
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: Icon(Icons.close, color: widget.isDarkMode ? Colors.white70 : Colors.black54),
+                  icon: Icon(Icons.close, color: isDark ? Colors.white70 : Colors.black54),
                 ),
               ],
             ),
@@ -2551,22 +2798,22 @@ class _AddressPageState extends State<AddressPage> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: widget.isDarkMode ? Colors.white60 : Colors.black54,
+            color: isDark ? Colors.white60 : Colors.black54,
           ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          style: TextStyle(color: widget.isDarkMode ? Colors.white : Colors.black),
+          style: TextStyle(color: isDark ? Colors.white : Colors.black),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: widget.isDarkMode ? Colors.white54 : Colors.black45),
+            prefixIcon: Icon(icon, color: isDark ? Colors.white54 : Colors.black45),
             filled: true,
-            fillColor: widget.isDarkMode ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+            fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
         ),
       ],
@@ -2578,16 +2825,326 @@ class _AddressPageState extends State<AddressPage> {
       value: title,
       child: Row(
         children: [
-          Icon(icon, size: 20, color: color ?? (widget.isDarkMode ? Colors.white70 : Colors.black54)),
+          Icon(icon, size: 20, color: color ?? (isDark ? Colors.white70 : Colors.black54)),
           const SizedBox(width: 12),
           Text(
             title,
             style: TextStyle(
               fontSize: 14,
-              color: color ?? (widget.isDarkMode ? Colors.white : Colors.black),
+              color: color ?? (isDark ? Colors.white : Colors.black),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: isDark ? Colors.white : Colors.black,
+              letterSpacing: -0.5,
+            ),
+          ),
+          TextButton(
+            onPressed: () {},
+            child: Text(
+              'See All',
+              style: TextStyle(
+                color: const Color(0xFF27C93F),
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF13141F) : const Color(0xFF1F202D),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
+      ),
+      padding: const EdgeInsets.fromLTRB(40, 60, 40, 40),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Column 1: Follow Us
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'FOLLOW US',
+                      style: TextStyle(
+                        color: const Color(0xFF4F8EFE),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        _footerSocialIcon(Icons.facebook),
+                        _footerSocialIcon(Icons.camera_alt_outlined),
+                        _footerSocialIcon(Icons.business_center_outlined), // LinkedIn
+                        _footerSocialIcon(Icons.chat_bubble_outline), // Twitter
+                        _footerSocialIcon(Icons.alternate_email), // G+
+                        _footerSocialIcon(Icons.image_outlined), // Behance
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Column 2: Shop
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _footerHeader('SHOP'),
+                    _footerLink('New In'),
+                    _footerLink('Shoes'),
+                    _footerLink('Bags'),
+                    _footerLink('Shirts'),
+                    _footerLink('Jackets'),
+                    _footerLink('Accessories'),
+                  ],
+                ),
+              ),
+              
+              // Column 3: Information
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _footerHeader('INFORMATION'),
+                    _footerLink('About Us'),
+                    _footerLink('Customers'),
+                    _footerLink('Service'),
+                    _footerLink('Collection'),
+                    _footerLink('Sellers'),
+                  ],
+                ),
+              ),
+              
+              // Column 4: Press
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _footerHeader('PRESS'),
+                    _footerLink('Press Releases'),
+                    _footerLink('Awards'),
+                    _footerLink('Testimonials'),
+                    _footerLink('Timeline'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 80),
+          Container(height: 1, color: Colors.white.withOpacity(0.1)),
+          const SizedBox(height: 40),
+          
+          // Bottom Navigation Strip
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _footerBottomLink('HOME'),
+              _footerBottomLink('EXPLORE'),
+              _footerBottomLink('WORKS'),
+              _footerBottomLink('SHOP'),
+              _footerBottomLink('ABOUT US'),
+              _footerBottomLink('CONTACT'),
+            ],
+          ),
+          const SizedBox(height: 40),
+          Text(
+            '© 2026 Blinkite User App. All Rights Reserved.',
+            style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _footerHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: const Color(0xFF4F8EFE),
+          fontWeight: FontWeight.w900,
+          fontSize: 14,
+          letterSpacing: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _footerLink(String title) {
+    return InkWell(
+      onTap: () => _onFooterLinkTap(title),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Text(
+          title,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _footerBottomLink(String title) {
+    return InkWell(
+      onTap: () => _onFooterLinkTap(title),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: const Color(0xFF4F8EFE).withOpacity(0.8),
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          letterSpacing: 1.2,
+        ),
+      ),
+    );
+  }
+
+  void _onFooterLinkTap(String title) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Navigating to $title...'),
+        backgroundColor: const Color(0xFF27C93F),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Widget _footerSocialIcon(IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Icon(icon, color: Colors.white, size: 22),
+    );
+  }
+}
+
+class _CategoryHoverCard extends StatefulWidget {
+  final CategoryItem category;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _CategoryHoverCard({required this.category, required this.isDark, required this.onTap});
+
+  @override
+  State<_CategoryHoverCard> createState() => _CategoryHoverCardState();
+}
+
+class _CategoryHoverCardState extends State<_CategoryHoverCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.identity()
+            ..scale(_isHovered ? 1.05 : 1.0)
+            ..translate(0.0, _isHovered ? -8.0 : 0.0),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(_isHovered ? 0.3 : 0.1),
+                blurRadius: _isHovered ? 20 : 10,
+                offset: Offset(0, _isHovered ? 12 : 6),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Full background image
+                Image.network(
+                  widget.category.imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.grey.shade300,
+                    child: const Icon(Icons.category, size: 40),
+                  ),
+                ),
+                // Gradient Overlay
+                Positioned.fill(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(_isHovered ? 0.8 : 0.6),
+                        ],
+                        stops: const [0.6, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+                // Category Name
+                Positioned(
+                  bottom: 12,
+                  left: 12,
+                  right: 12,
+                  child: Text(
+                    widget.category.label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 2)),
+                      ],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -2743,8 +3300,10 @@ class AllProductsPage extends StatefulWidget {
 }
 
 class _AllProductsPageState extends State<AllProductsPage> {
+  bool get isDark => Theme.of(context).brightness == Brightness.dark;
   late Map<int, int> _qty;
   late List<ProductItem> filteredProducts;
+  final Set<int> _favoriteProducts = {}; // Mocked favorites for category page
 
   @override
   void initState() {
@@ -2757,7 +3316,6 @@ class _AllProductsPageState extends State<AllProductsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = widget.isDarkMode;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF090A12) : const Color(0xFFF4F4F8),
@@ -2835,13 +3393,15 @@ class _AllProductsPageState extends State<AllProductsPage> {
   Widget _buildGridCard(ProductItem product) {
     final globalIdx = widget.allProducts.indexOf(product);
     final qty = _qty[globalIdx] ?? 0;
-    final bool isDark = widget.isDarkMode;
+    
     final cardBg = isDark ? const Color(0xFF1A1B28) : Colors.white;
     final borderColor = isDark
         ? Colors.white.withOpacity(0.07)
         : Colors.black.withOpacity(0.07);
 
-    return Container(
+    return GestureDetector(
+      onTap: () => _showProductDetail(product),
+      child: Container(
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
@@ -2975,6 +3535,252 @@ class _AllProductsPageState extends State<AllProductsPage> {
             ),
           ),
         ],
+      ),
+      ),
+    );
+  }
+
+  // ── Product Detail Card (Replicated for Category Page) ───────
+  void _showProductDetail(ProductItem product) {
+    final int globalIdx = widget.allProducts.indexOf(product);
+    
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final bool isFavorite = _favoriteProducts.contains(globalIdx);
+          final int qty = _qty[globalIdx] ?? 0;
+          final PageController pageController = PageController();
+          
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              width: 350,
+              height: 580,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1F2E) : Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30),
+                child: Column(
+                  children: [
+                    Stack(
+                      children: [
+                        SizedBox(
+                          height: 300,
+                          child: PageView.builder(
+                            controller: pageController,
+                            itemCount: product.images.length,
+                            itemBuilder: (context, i) => Image.network(
+                              product.images[i],
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 16,
+                          left: 16,
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: CircleAvatar(
+                              backgroundColor: Colors.black.withOpacity(0.4),
+                              child: const Icon(Icons.close, color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 16,
+                          right: 16,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_favoriteProducts.contains(globalIdx)) {
+                                  _favoriteProducts.remove(globalIdx);
+                                } else {
+                                  _favoriteProducts.add(globalIdx);
+                                }
+                              });
+                              setDialogState(() {});
+                            },
+                            child: CircleAvatar(
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                isFavorite ? Icons.favorite : Icons.favorite_border,
+                                color: isFavorite ? Colors.red : Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (product.images.length > 1)
+                          Positioned(
+                            bottom: 16,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.4),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '${product.images.length} Images',
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    product.name,
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w900,
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    'Fresh',
+                                    style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              product.size,
+                              style: const TextStyle(color: Colors.grey, fontSize: 14),
+                            ),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Premium quality item sourced directly for your convenience. Hand-picked and guaranteed fresh upon delivery.',
+                              style: TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
+                            ),
+                            const Spacer(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('MRP', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                                    Text(
+                                      product.price,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                qty == 0
+                                  ? ElevatedButton(
+                                      onPressed: () {
+                                        setState(() => _qty[globalIdx] = 1);
+                                        setDialogState(() {});
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF27C93F),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        elevation: 0,
+                                      ),
+                                      child: const Text('ADD', style: TextStyle(fontWeight: FontWeight.w900)),
+                                    )
+                                  : Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF27C93F),
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          _detailQtyButton(
+                                            icon: Icons.remove,
+                                            onTap: () {
+                                              setState(() {
+                                                if ((_qty[globalIdx] ?? 1) <= 1) {
+                                                  _qty.remove(globalIdx);
+                                                } else {
+                                                  _qty[globalIdx] = (_qty[globalIdx] ?? 1) - 1;
+                                                }
+                                              });
+                                              setDialogState(() {});
+                                            },
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                                            child: Text(
+                                              '$qty',
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+                                            ),
+                                          ),
+                                          _detailQtyButton(
+                                            icon: Icons.add,
+                                            onTap: () {
+                                              setState(() => _qty[globalIdx] = (qty) + 1);
+                                              setDialogState(() {});
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _detailQtyButton({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 18, color: Colors.white),
       ),
     );
   }
@@ -3167,7 +3973,16 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
                               padding: const EdgeInsets.only(left: 40),
                               child: IgnorePointer(
                                 child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 500),
+                                  duration: const Duration(seconds: 1),
+                                  transitionBuilder: (child, animation) {
+                                    return SlideTransition(
+                                      position: Tween<Offset>(
+                                        begin: const Offset(0.0, 1.2),
+                                        end: Offset.zero,
+                                      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                                      child: FadeTransition(opacity: animation, child: child),
+                                    );
+                                  },
                                   child: Text(
                                     placeholderNames[placeholderIndex],
                                     key: ValueKey<int>(placeholderIndex),
@@ -3308,7 +4123,16 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
                         padding: const EdgeInsets.only(left: 40),
                         child: IgnorePointer(
                           child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 500),
+                            duration: const Duration(seconds: 1),
+                            transitionBuilder: (child, animation) {
+                              return SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0.0, 1.2),
+                                  end: Offset.zero,
+                                ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                                child: FadeTransition(opacity: animation, child: child),
+                              );
+                            },
                             child: Text(
                               placeholderNames[placeholderIndex],
                               key: ValueKey<int>(placeholderIndex),
