@@ -329,6 +329,12 @@ class _AddressPageState extends State<AddressPage> with SingleTickerProviderStat
     ProductItem(name: 'ADIDAS YEEZY 350', size: 'TURTLE DOVE', price: '₹36900', deliveryMins: '19', imageUrl: 'https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?w=400&q=80', category: 'Shoes'),
     ProductItem(name: 'NIKE DUNK LOW', size: 'PANDA', price: '₹9020', deliveryMins: '13', imageUrl: 'https://images.unsplash.com/photo-1628150346041-ca47af830863?w=400&q=80', category: 'Shoes'),
     ProductItem(name: 'AIR JORDAN 1 RETRO', size: 'UNIVERSITY BLUE', price: '₹14760', deliveryMins: '17', imageUrl: 'https://images.unsplash.com/photo-1584735175315-9d58238a06cf?w=400&q=80', category: 'Shoes'),
+    // NEW ARRIVALS (Integrated into main list to fix indexing errors)
+    ProductItem(name: 'Tan Solid Laptop Backpack', size: 'Large', price: '₹1490', deliveryMins: '25', imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80', category: 'Backpacks'),
+    ProductItem(name: 'Brown Solid Biker Jacket', size: 'M', price: '₹1100', deliveryMins: '30', imageUrl: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&q=80', category: 'Jackets'),
+    ProductItem(name: 'Men Brown Solid Mid-Top Boots', size: '9 UK', price: '₹1150', deliveryMins: '45', imageUrl: 'https://images.unsplash.com/photo-1520639889456-748436ef7b90?w=500&q=80', category: 'Shoes'),
+    ProductItem(name: 'Petite Olive Green Solid Top', size: 'S', price: '₹490', deliveryMins: '20', imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500&q=80', category: 'Dresses'),
+    ProductItem(name: 'Brown Solid Laptop Bag', size: '15.6"', price: '₹990', deliveryMins: '15', imageUrl: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=500&q=80', category: 'Bags'),
   ];
 
   String get _categoryMessage {
@@ -1169,6 +1175,8 @@ class _AddressPageState extends State<AddressPage> with SingleTickerProviderStat
               const SizedBox(height: 60),
 
               _FeaturedProductsSection(
+                allProducts: allProducts,
+                newArrivalProducts: allProducts.sublist(allProducts.length - 5),
                 onAddToCart: (idx) => setState(() => _productQty[idx] = (_productQty[idx] ?? 0) + 1),
                 onShowDetail: (product, idx) => _showProductDetail(product, idx),
                 productQty: _productQty,
@@ -4472,12 +4480,16 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
 }
 
 class _FeaturedProductsSection extends StatefulWidget {
+  final List<ProductItem> allProducts;
+  final List<ProductItem> newArrivalProducts;
   final Function(int) onAddToCart;
   final Function(ProductItem, int) onShowDetail;
   final Map<int, int> productQty;
   final bool isDark;
 
   const _FeaturedProductsSection({
+    required this.allProducts,
+    required this.newArrivalProducts,
     required this.onAddToCart,
     required this.onShowDetail,
     required this.productQty,
@@ -4491,14 +4503,6 @@ class _FeaturedProductsSection extends StatefulWidget {
 class _FeaturedProductsSectionState extends State<_FeaturedProductsSection> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final List<String> _tabs = ['New Arrival', 'Best Selling', 'Top Rated'];
-
-  final List<ProductItem> _newArrivals = [
-    ProductItem(name: 'Tan Solid Laptop Backpack', size: 'Large', price: '₹1490', deliveryMins: '25', imageUrl: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80', category: 'Backpacks'),
-    ProductItem(name: 'Brown Solid Biker Jacket', size: 'M', price: '₹1100', deliveryMins: '30', imageUrl: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&q=80', category: 'Jackets'),
-    ProductItem(name: 'Men Brown Solid Mid-Top Boots', size: '9 UK', price: '₹1150', deliveryMins: '45', imageUrl: 'https://images.unsplash.com/photo-1520639889456-748436ef7b90?w=500&q=80', category: 'Shoes'),
-    ProductItem(name: 'Petite Olive Green Solid Top', size: 'S', price: '₹490', deliveryMins: '20', imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500&q=80', category: 'Dresses'),
-    ProductItem(name: 'Brown Solid Laptop Bag', size: '15.6"', price: '₹990', deliveryMins: '15', imageUrl: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=500&q=80', category: 'Bags'),
-  ];
 
   @override
   void initState() {
@@ -4545,7 +4549,7 @@ class _FeaturedProductsSectionState extends State<_FeaturedProductsSection> with
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildProductRow(_newArrivals),
+              _buildProductRow(widget.newArrivalProducts),
               Center(child: Text('Best Selling coming soon...', style: TextStyle(color: widget.isDark ? Colors.white54 : Colors.black54))),
               Center(child: Text('Top Rated coming soon...', style: TextStyle(color: widget.isDark ? Colors.white54 : Colors.black54))),
             ],
@@ -4561,15 +4565,17 @@ class _FeaturedProductsSectionState extends State<_FeaturedProductsSection> with
       scrollDirection: Axis.horizontal,
       itemCount: products.length,
       itemBuilder: (context, index) {
-        // Reuse the visual logic of the card as requested
+        final product = products[index];
+        final globalIdx = widget.allProducts.indexOf(product);
+        
         return Container(
           width: 170,
           margin: const EdgeInsets.only(right: 16, bottom: 10),
           child: _AddressPageProductCard(
-            product: products[index],
-            qty: widget.productQty[1000 + index] ?? 0,
-            onAddToCart: () => widget.onAddToCart(1000 + index),
-            onTap: () => widget.onShowDetail(products[index], 1000 + index),
+            product: product,
+            qty: widget.productQty[globalIdx] ?? 0,
+            onAddToCart: () => widget.onAddToCart(globalIdx),
+            onTap: () => widget.onShowDetail(product, globalIdx),
           ),
         );
       },

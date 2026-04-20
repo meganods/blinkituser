@@ -97,10 +97,10 @@ class _ShoesPageState extends State<ShoesPage> {
             child: GridView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 1,
-                childAspectRatio: 0.85, // Balanced large card ratio
-                mainAxisSpacing: 30,
-                crossAxisSpacing: 0,
+                crossAxisCount: 4,
+                childAspectRatio: 100 / 155, // 100px width / 150px height approx
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 8,
               ),
               itemCount: shoeProducts.length,
               itemBuilder: (context, index) => _buildShoeCard(shoeProducts[index], widget.isDarkMode, context),
@@ -140,18 +140,18 @@ class _ShoesPageState extends State<ShoesPage> {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E202E) : Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFF1F1F1), width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFF1F1F1), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-            blurRadius: 25,
-            offset: const Offset(0, 15),
+            color: Colors.black.withOpacity(isDark ? 0.1 : 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -164,7 +164,7 @@ class _ShoesPageState extends State<ShoesPage> {
                     width: double.infinity,
                     color: isDark ? Colors.white.withOpacity(0.02) : const Color(0xFFF9F9F9),
                     child: Padding(
-                      padding: const EdgeInsets.all(30.0),
+                      padding: const EdgeInsets.all(8.0),
                       child: Hero(
                         tag: shoe.imageUrl + shoe.name,
                         child: Image.network(
@@ -175,145 +175,66 @@ class _ShoesPageState extends State<ShoesPage> {
                     ),
                   ),
                   Positioned(
-                    top: 20,
-                    right: 20,
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
-                      ),
-                      child: const Icon(Icons.favorite_border, size: 22, color: Colors.black87),
-                    ),
-                  ),
-                  Positioned(
-                    top: 20,
-                    left: 20,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black87,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'NEW ARRIVAL',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
-                      ),
-                    ),
+                    top: 6,
+                    right: 6,
+                    child: Icon(Icons.favorite_border, size: 14, color: isDark ? Colors.white38 : Colors.black26),
                   ),
                 ],
               ),
             ),
-            // Details Area
+            // Minimal Details Area
             Expanded(
               flex: 2,
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Delivery Timer
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF27C93F).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.timer_outlined, size: 14, color: Color(0xFF27C93F)),
-                              const SizedBox(width: 6),
-                              Text('12 MINS DELIVERY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: const Color(0xFF27C93F))),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          shoe.price,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
                     Text(
-                      shoe.name,
+                      shoe.price,
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 12,
                         fontWeight: FontWeight.w900,
                         color: isDark ? Colors.white : Colors.black,
-                        height: 1.1,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 2),
                     Text(
-                      shoe.size, // Using size for the subtitle description in ProductItem
-                      style: TextStyle(fontSize: 14, color: isDark ? Colors.white38 : Colors.black45, letterSpacing: 0.5),
+                      shoe.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
                     ),
                     const Spacer(),
-                    Row(
-                      children: [
-                        // Sizes Preview
-                        Expanded(
-                          child: Row(
-                            children: ['7', '8', '9', '10'].map((s) => Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Center(child: Text(s, style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black87, fontWeight: FontWeight.bold))),
-                            )).toList(),
-                          ),
+                    // Ultra Minimal ADD Button
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _localCart[globalIdx] = (_localCart[globalIdx] ?? 0) + 1;
+                        });
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        decoration: BoxDecoration(
+                          color: qty > 0 ? const Color(0xFF27C93F).withOpacity(0.12) : const Color(0xFF27C93F),
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                        // "ADD" Button consistent with Home Screen - Larger
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _localCart[globalIdx] = (_localCart[globalIdx] ?? 0) + 1;
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${shoe.name} added to basket (Total: ${_localCart[globalIdx]})'), 
-                                duration: const Duration(seconds: 1)
-                              ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                            decoration: BoxDecoration(
-                              color: qty > 0 ? const Color(0xFF27C93F).withOpacity(0.12) : const Color(0xFF27C93F),
-                              borderRadius: BorderRadius.circular(16),
-                              border: qty > 0 ? Border.all(color: const Color(0xFF27C93F), width: 1) : null,
-                              boxShadow: qty > 0 ? null : [
-                                BoxShadow(
-                                  color: const Color(0xFF27C93F).withOpacity(0.3),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              qty > 0 ? 'ADD MORE ($qty)' : 'ADD TO CART',
-                              style: TextStyle(
-                                color: qty > 0 ? const Color(0xFF27C93F) : Colors.white, 
-                                fontSize: 13, 
-                                fontWeight: FontWeight.w900, 
-                                letterSpacing: 0.5
-                              ),
+                        child: Center(
+                          child: Text(
+                            qty > 0 ? '$qty' : 'ADD',
+                            style: TextStyle(
+                              color: qty > 0 ? const Color(0xFF27C93F) : Colors.white, 
+                              fontSize: 9, 
+                              fontWeight: FontWeight.w900, 
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
